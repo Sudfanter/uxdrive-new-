@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive UI Recreation with Panels</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <style>
+        :root {
+            --bg-color: #f8fafd;
+            --main-bg: #ffffff;
+            --text-main: #1f1f1f;
+            --text-muted: #444746;
+            --primary: #0b57d0;
+            --active-bg: #c2e7ff;
+            --hover-bg: #e1e5ea;
+            --border-color: #e0e0e0;
+            --search-bg: #e9eef6;
+            --font-family: 'Roboto', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .material-symbols-outlined {
+            font-size: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar { width: 256px; display: flex; flex-direction: column; padding: 12px 16px; flex-shrink: 0; }
+        .logo-area { display: flex; align-items: center; gap: 8px; padding: 12px 8px; margin-bottom: 16px; font-size: 22px; color: var(--text-muted); }
+        .logo-area img { width: 40px; height: 40px; }
+        .btn-new { display: flex; align-items: center; gap: 12px; background: #fff; padding: 18px 20px; border-radius: 16px; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); font-size: 14px; font-weight: 500; color: var(--text-main); cursor: pointer; width: fit-content; margin-bottom: 16px; }
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 2px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; color: var(--text-main); }
+        .nav-item:hover { background-color: var(--hover-bg); }
+        .nav-item.active { background-color: var(--active-bg); font-weight: 500; }
+        .nav-item.active .material-symbols-outlined { color: var(--text-main); font-variation-settings: 'FILL' 1; }
+
+        .storage-section { padding: 16px; margin-top: auto; }
+        .storage-meter { height: 4px; background-color: var(--border-color); border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+        .storage-used { height: 100%; width: 25%; background-color: var(--primary); }
+        .storage-text { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+        .btn-storage { background: transparent; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 18px; color: var(--primary); font-weight: 500; font-size: 14px; cursor: pointer; }
+
+        /* Top Header */
+        .top-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; height: 64px; background-color: var(--bg-color); }
+        .search-bar { display: flex; align-items: center; background-color: var(--search-bg); padding: 0 16px; border-radius: 24px; width: 720px; height: 48px; gap: 12px; }
+        .search-bar input { border: none; background: transparent; flex-grow: 1; font-size: 16px; outline: none; color: var(--text-main); }
+        .header-icons { display: flex; align-items: center; gap: 16px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background-color: #558b2f; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .avatar.small { width: 24px; height: 24px; font-size: 12px; }
+
+        /* --- Main Content Area --- */
+        .main-container {
+            flex-grow: 1; display: flex; flex-direction: row; background-color: var(--main-bg);
+            border-radius: 16px; margin: 16px 0 16px 0; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .main-body { padding: 24px 24px; overflow-y: auto; flex-grow: 1; background-color: #fff; }
+        .page-title { font-size: 24px; font-weight: 400; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* --- Square Category Buttons --- */
+        .category-buttons { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+        .cat-btn {
+            width: 86px; height: 86px; border-radius: 16px; border: none; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 14px; font-weight: 500; font-family: inherit;
+            cursor: pointer; transition: filter 0.2s, transform 0.1s;
+        }
+        .cat-btn:hover { filter: brightness(0.95); transform: translateY(-2px); }
+        .cat-btn:active { transform: translateY(0); }
+        .add-cat-btn { background-color: var(--search-bg); color: var(--text-muted); border: 2px dashed var(--border-color); }
+        .add-cat-btn .material-symbols-outlined { color: inherit; margin-bottom: 4px; font-size: 28px; }
+
+        .section { margin-bottom: 24px; }
+        .section-header { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text-main); margin-bottom: 16px; cursor: pointer; }
+        .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+        /* --- Info / Preview Details Panel --- */
+        .details-panel {
+            width: 20%; min-width: 260px; max-width: 350px; background-color: #fff; border-left: 1px solid var(--border-color);
+            display: none; flex-direction: column; padding: 24px; overflow-y: auto; flex-shrink: 0;
+        }
+        .details-panel.show { display: flex; }
+        .dp-empty { color: var(--text-muted); text-align: center; margin-top: 40px; font-size: 14px; }
+        .dp-icon-large { text-align: center; margin-bottom: 16px; }
+        .dp-icon-large .material-symbols-outlined { font-size: 80px; }
+        .dp-title { font-size: 18px; font-weight: 500; text-align: center; margin-bottom: 24px; word-wrap: break-word; }
+        .dp-section-title { font-size: 16px; font-weight: 500; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .dp-detail-row { display: flex; flex-direction: column; margin-bottom: 16px; font-size: 14px; }
+        .dp-detail-label { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+        .dp-detail-value { color: var(--text-main); font-weight: 500; }
+        .btn-properties { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: auto; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: transparent; cursor: pointer; color: var(--text-main); font-weight: 500; transition: background 0.2s; }
+        .btn-properties:hover { background-color: var(--hover-bg); }
+        .dp-preview-box { width: 100%; min-height: 150px; background: var(--search-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; overflow: hidden; padding: 16px; }
+
+        /* View Controls */
+        .view-controls { display: flex; align-items: center; gap: 12px; }
+        .view-confirm-icon { font-size: 22px; color: var(--text-muted); cursor: pointer; }
+        .view-button-wrapper { position: relative; }
+        .btn-view { display: flex; align-items: center; gap: 8px; background-color: var(--search-bg); color: var(--text-main); border: none; padding: 8px 16px; border-radius: 24px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        .btn-view:hover { background-color: var(--hover-bg); }
+        .btn-view.active-btn { background-color: var(--active-bg); }
+
+        /* Dropdown */
+        .view-dropdown { display: none; position: absolute; top: 100%; right: 0; background-color: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 16px; width: 320px; z-index: 10; margin-top: 8px; gap: 8px; }
+        .view-dropdown.show { display: flex; flex-direction: column; }
+        .view-dropdown-item { display: flex; align-items: center; gap: 16px; padding: 10px 12px; border-radius: 8px; font-size: 14px; color: var(--text-main); cursor: pointer; }
+        .view-dropdown-item:hover { background-color: var(--hover-bg); }
+        .view-dropdown-item.active { background-color: var(--active-bg); font-weight: 500; }
+        .view-dropdown-item.active .item-check { color: var(--primary); opacity: 1; }
+        .view-dropdown-divider { height: 1px; background-color: var(--border-color); margin: 4px 0; }
+        
+        .square-extra-large { font-size: 32px; } .square-large { font-size: 24px; } .square-medium { font-size: 18px; } .square-small { font-size: 14px; }
+        .item-check { opacity: 0; width: 22px; font-size: 22px; } 
+
+        /* File Icon Colors */
+        .icon-doc { color: #1a73e8; font-variation-settings: 'FILL' 1;}
+        .icon-sheet { color: #188038; font-variation-settings: 'FILL' 1;}
+        .icon-video { color: #d93025; font-variation-settings: 'FILL' 1;}
+
+        /* --- DYNAMIC LAYOUT STYLES --- */
+        #mainFileList { width: 100%; }
+        .file-row { transition: background-color 0.1s; border-radius: 4px; }
+        .file-row:hover { background-color: var(--hover-bg); cursor: pointer; }
+        .file-row.selected { background-color: var(--active-bg); outline: 1px solid var(--primary); }
+
+        /* 1. LIST LAYOUT */
+        .layout-list .file-grid-header, .layout-list .file-row { display: grid; grid-template-columns: 150px 150px minmax(300px, 1fr) 48px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .layout-list .file-grid-header { font-weight: 500; color: var(--text-muted); border-bottom: 1px solid #c7c7c7; }
+        
+        /* 2. DETAILS LAYOUT */
+        .layout-details .file-grid-header, .layout-details .file-row { display: grid; grid-template-columns: minmax(250px, 2fr) 150px 150px 100px 48px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .layout-details .file-grid-header { font-weight: 500; color: var(--text-muted); border-bottom: 1px solid #c7c7c7; }
+
+        /* 3. TILES LAYOUT */
+        .layout-tiles { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; }
+        .layout-tiles .file-grid-header { display: none; }
+        .layout-tiles .file-row { display: flex; align-items: center; width: 320px; padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; justify-content: space-between;}
+        .layout-tiles .tile-left-content { display: flex; align-items: center; }
+        .layout-tiles .file-name > .material-symbols-outlined { font-size: 48px; margin-right: 12px; } 
+        .layout-tiles .tile-text-container { display: flex; flex-direction: column; gap: 4px; }
+        .layout-tiles .tile-title { font-size: 16px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;} 
+        .layout-tiles .tile-type, .layout-tiles .tile-size { font-size: 13px; color: var(--text-muted); }
+
+        /* 4. CONTENT LAYOUT */
+        .layout-content { display: flex; flex-direction: column; }
+        .layout-content .file-grid-header { display: none; }
+        .layout-content .file-row { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-color); }
+        .layout-content .file-name > .material-symbols-outlined { font-size: 32px; margin-right: 16px; } 
+        .layout-content .content-text-container { display: flex; flex-direction: column; flex-grow: 1; gap: 4px; }
+        .layout-content .content-top-row, .layout-content .content-bottom-row { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-muted); }
+        .layout-content .content-top-row .content-title { font-size: 14px; font-weight: 500; color: var(--text-main); margin-right: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+
+        .file-name { display: flex; align-items: center; gap: 12px; color: var(--text-main); font-weight: 500; flex-wrap: wrap; }
+        .file-owner { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+        
+        /* Tag Styling */
+        .file-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-left: 4px; }
+        .tag-pill { background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+        /* 3-Dot Dropdown Styling */
+        .file-options-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
+        .file-options-btn { padding: 4px; border-radius: 50%; transition: background-color 0.2s; }
+        .file-options-btn:hover { background-color: rgba(0,0,0,0.08); }
+        .file-options-menu {
+            display: none; position: absolute; right: 10px; top: 30px; background: #fff;
+            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 20;
+            min-width: 140px; padding: 8px 0; border: 1px solid var(--border-color);
+        }
+        .file-options-menu.show { display: flex; flex-direction: column; }
+        .file-options-item { padding: 8px 16px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text-main); }
+        .file-options-item:hover { background-color: var(--hover-bg); }
+
+        .size-xl .file-name > .material-symbols-outlined { font-size: 36px; }
+        .size-lg .file-name > .material-symbols-outlined { font-size: 28px; }
+        .size-md .file-name > .material-symbols-outlined { font-size: 20px; }
+        .size-sm .file-name > .material-symbols-outlined { font-size: 16px; }
+
+        /* --- Right App Panel --- */
+        .right-panel { width: 56px; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 24px; background-color: var(--bg-color); }
+        .right-panel img { width: 20px; height: 20px; cursor: pointer; }
+        .divider { width: 32px; height: 1px; background-color: var(--border-color); }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 26 l6 -10 h12 l-6 10 z" fill="#FFC107"/>
+                <path d="M14 26 l-6 -10 l6 -10 l6 10 z" fill="#1976D2"/>
+                <path d="M26 16 h-12 l-6 10 h12 z" fill="#4CAF50"/>
+            </svg>
+            <span>Drive</span>
+        </div>
+        <button class="btn-new">
+            <span class="material-symbols-outlined" style="font-size: 24px;">add</span> New
+        </button>
+        <ul class="nav-menu">
+            <li class="nav-item active"><span class="material-symbols-outlined">home</span> Home</li>
+            <li class="nav-item"><span class="material-symbols-outlined" style="font-size: 16px;">arrow_right</span><span class="material-symbols-outlined">hard_drive</span> My Drive</li>
+            <li class="nav-item"><span class="material-symbols-outlined" style="font-size: 16px;">arrow_right</span><span class="material-symbols-outlined">devices</span> Computers</li>
+            <li class="nav-item" style="margin-top: 12px;"><span class="material-symbols-outlined">group</span> Shared with me</li>
+            <li class="nav-item"><span class="material-symbols-outlined">schedule</span> Recent</li>
+            <li class="nav-item"><span class="material-symbols-outlined">star</span> Starred</li>
+            <li class="nav-item" style="margin-top: 12px;"><span class="material-symbols-outlined">report</span> Spam</li>
+            <li class="nav-item"><span class="material-symbols-outlined">delete</span> Trash</li>
+            <li class="nav-item"><span class="material-symbols-outlined">cloud</span> Storage</li>
+        </ul>
+        <div class="storage-section">
+            <div class="storage-meter"><div class="storage-used"></div></div>
+            <div class="storage-text">3.4 GB of 15 GB used</div>
+            <button class="btn-storage">Get more storage</button>
+        </div>
+    </aside>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+        
+        <header class="top-header">
+            <div class="search-bar">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" placeholder="Search in Drive">
+                <span class="material-symbols-outlined">tune</span>
+            </div>
+            <div class="header-icons">
+                <span class="material-symbols-outlined">offline_pin</span>
+                <span class="material-symbols-outlined">help</span>
+                <span class="material-symbols-outlined">settings</span>
+                <span class="material-symbols-outlined">apps</span>
+                <div class="avatar">Ty</div>
+            </div>
+        </header>
+
+        <main class="main-container">
+            <div class="main-body">
+                <h1 class="page-title">
+                    Welcome to Drive <span class="material-symbols-outlined">info</span>
+                </h1>
+
+                <div class="category-buttons" id="categoryButtonsContainer">
+                    <button class="cat-btn" style="background-color: rgba(234, 67, 53, 0.15); color: #d93025;">Medical</button>
+                    <button class="cat-btn" style="background-color: rgba(52, 168, 83, 0.15); color: #188038;">Taxes</button>
+                    <button class="cat-btn" style="background-color: rgba(251, 188, 5, 0.15); color: #ea8600;">Financial</button>
+                    <button class="cat-btn" style="background-color: rgba(66, 133, 244, 0.15); color: #1a73e8;">Business</button>
+                    
+                    <button class="cat-btn add-cat-btn" id="addCategoryBtn">
+                        <span class="material-symbols-outlined">add</span>
+                        Add
+                    </button>
+                </div>
+
+                <div class="section">
+                    <div class="section-header"><span class="material-symbols-outlined">chevron_right</span> Suggested folders</div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header-row">
+                        <div class="section-header" style="margin-bottom: 0;">
+                            <span class="material-symbols-outlined">expand_more</span> Suggested files
+                        </div>
+                        
+                        <div class="view-controls">
+                            <span class="material-symbols-outlined view-confirm-icon">check</span>
+                            <div class="view-button-wrapper">
+                                <button class="btn-view" id="viewButton">
+                                    <span class="material-symbols-outlined">visibility</span> View
+                                </button>
+                                
+                                <div class="view-dropdown" id="viewDropdown">
+                                    <div class="view-dropdown-item size-option" data-size="xl"><span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined square-extra-large">crop_square</span> Extra Large Icons</div>
+                                    <div class="view-dropdown-item size-option" data-size="lg"><span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined square-large">crop_square</span> Large Icons</div>
+                                    <div class="view-dropdown-item size-option active" data-size="md"><span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined square-medium">crop_square</span> Medium Icons</div>
+                                    <div class="view-dropdown-item size-option" data-size="sm"><span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined square-small">crop_square</span> Small Icons</div>
+                                    <div class="view-dropdown-divider"></div>
+                                    
+                                    <div class="view-dropdown-item layout-option active" data-layout="list">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">list</span> List
+                                    </div>
+                                    <div class="view-dropdown-item layout-option" data-layout="details">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">format_list_bulleted</span> Details
+                                    </div>
+                                    <div class="view-dropdown-item layout-option" data-layout="tiles">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">dashboard</span> Tiles
+                                    </div>
+                                    <div class="view-dropdown-item layout-option" data-layout="content">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">view_agenda</span> Content
+                                    </div>
+                                    
+                                    <div class="view-dropdown-divider"></div>
+                                    
+                                    <div class="view-dropdown-item panel-option" data-panel="info">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">info</span> Info Panel
+                                    </div>
+                                    <div class="view-dropdown-item panel-option" data-panel="preview">
+                                        <span class="material-symbols-outlined item-check">check</span><span class="material-symbols-outlined">preview</span> Preview Panel
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mainFileList" class="size-md layout-list">
+                        </div>
+                </div>
+            </div>
+
+            <aside class="details-panel" id="detailsPanel"></aside>
+            
+        </main>
+    </div>
+
+    <aside class="right-panel">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="Calendar">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Google_Keep_icon_%282020%29.svg" alt="Keep">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5b/Google_Tasks_2021.svg" alt="Tasks">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Google_Contacts_icon.svg" alt="Contacts">
+        <div class="divider"></div>
+        <span class="material-symbols-outlined">add</span>
+    </aside>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- File Data Model with IDs and Tags Array ---
+            const filesData = [
+                { id: "f1", name: "User Experience Design", type: "Google Docs", iconClass: "icon-doc", iconName: "description", dateStr: "Apr 7, 2026", dateVal: new Date("2026-04-07").getTime(), owner: "me", size: "12 KB", tags: [] },
+                { id: "f2", name: "Earth Science", type: "Google Docs", iconClass: "icon-doc", iconName: "description", dateStr: "Apr 7, 2026", dateVal: new Date("2026-04-07").getTime(), owner: "me", size: "15 KB", tags: [] },
+                { id: "f3", name: "Information Technologies", type: "Google Docs", iconClass: "icon-doc", iconName: "description", dateStr: "Apr 7, 2026", dateVal: new Date("2026-04-07").getTime(), owner: "me", size: "20 KB", tags: [] },
+                { id: "f4", name: "Copy of EU5 Production Efficiency", type: "Google Sheets", iconClass: "icon-sheet", iconName: "table_chart", dateStr: "Mar 31, 2026", dateVal: new Date("2026-03-31").getTime(), owner: "me", size: "54 KB", tags: [] },
+                { id: "f5", name: "Web Application Development", type: "Google Docs", iconClass: "icon-doc", iconName: "description", dateStr: "Mar 9, 2026", dateVal: new Date("2026-03-09").getTime(), owner: "me", size: "10 KB", tags: [] },
+                { id: "f6", name: "2026-03-12 13-18-21.mp4", type: "MP4 Video", iconClass: "icon-video", iconName: "movie", dateStr: "Mar 31, 2026", dateVal: new Date("2026-03-31").getTime(), owner: "me", size: "15 MB", tags: [] },
+                { id: "f7", name: "Database Concepts", type: "Google Docs", iconClass: "icon-doc", iconName: "description", dateStr: "Feb 23, 2026", dateVal: new Date("2026-02-23").getTime(), owner: "me", size: "22 KB", tags: [] },
+                { id: "f8", name: "2026-03-12 14-30-57.mp4", type: "MP4 Video", iconClass: "icon-video", iconName: "movie", dateStr: "Mar 12, 2026", dateVal: new Date("2026-03-12").getTime(), owner: "me", size: "18 MB", tags: [] },
+                { id: "f9", name: "2026-03-12 11-52-48.mp4", type: "MP4 Video", iconClass: "icon-video", iconName: "movie", dateStr: "Mar 12, 2026", dateVal: new Date("2026-03-12").getTime(), owner: "me", size: "12 MB", tags: [] }
+            ];
+
+            const sortedFiles = [...filesData].sort((a, b) => b.dateVal - a.dateVal);
+
+            // UI Elements
+            const viewButton = document.getElementById('viewButton');
+            const viewDropdown = document.getElementById('viewDropdown');
+            const fileListContainer = document.getElementById('mainFileList');
+            const layoutOptions = document.querySelectorAll('.layout-option');
+            const sizeOptions = document.querySelectorAll('.size-option');
+            const panelOptions = document.querySelectorAll('.panel-option');
+            const detailsPanel = document.getElementById('detailsPanel');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const categoryButtonsContainer = document.getElementById('categoryButtonsContainer');
+            
+            let activePanel = null; 
+            let selectedFileId = null;
+            let currentLayout = 'list'; // Track the current layout
+
+            // --- Category Button Logic ---
+            addCategoryBtn.addEventListener('click', () => {
+                const name = prompt("Enter button name:");
+                if (!name) return;
+                
+                let colorStr = prompt("Enter a color (e.g., 'purple', '#9c27b0'):");
+                if (!colorStr) colorStr = '#808080';
+                
+                const newBtn = document.createElement('button');
+                newBtn.className = 'cat-btn';
+                newBtn.textContent = name;
+                newBtn.style.color = colorStr;
+                newBtn.style.backgroundColor = `color-mix(in srgb, ${colorStr} 15%, transparent)`;
+                
+                categoryButtonsContainer.insertBefore(newBtn, addCategoryBtn);
+            });
+
+            // --- Dropdown Toggle Logic ---
+            viewButton.addEventListener('click', (event) => {
+                viewDropdown.classList.toggle('show');
+                viewButton.classList.toggle('active-btn');
+                event.stopPropagation(); 
+            });
+
+            document.addEventListener('click', (event) => {
+                // Close View Dropdown
+                if (!viewButton.contains(event.target) && !viewDropdown.contains(event.target)) {
+                    closeMenu();
+                }
+                
+                // Close File Specific Dropdowns (3 dots menu)
+                if (!event.target.closest('.file-options-wrapper')) {
+                    document.querySelectorAll('.file-options-menu').forEach(menu => menu.classList.remove('show'));
+                }
+            });
+
+            // --- Icon Size Toggle Logic ---
+            sizeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    sizeOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    
+                    const selectedSize = option.getAttribute('data-size');
+                    fileListContainer.classList.remove('size-xl', 'size-lg', 'size-md', 'size-sm');
+                    fileListContainer.classList.add(`size-${selectedSize}`);
+                    
+                    closeMenu();
+                });
+            });
+
+            // --- Helper Function to Render Tags HTML ---
+            function getTagsHtml(tagsArray) {
+                if (!tagsArray || tagsArray.length === 0) return '';
+                let tagsStr = tagsArray.map(tag => `<span class="tag-pill">${tag}</span>`).join('');
+                return `<div class="file-tags">${tagsStr}</div>`;
+            }
+
+            // --- Helper Function to Render 3-Dot Options HTML ---
+            function getOptionsHtml(fileId) {
+                return `
+                <div class="file-options-wrapper">
+                    <span class="material-symbols-outlined file-options-btn" data-id="${fileId}">more_vert</span>
+                    <div class="file-options-menu" id="menu-${fileId}">
+                        <div class="file-options-item tag-action" data-id="${fileId}">
+                            <span class="material-symbols-outlined">label</span> Tag
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // --- Layout Rendering Logic ---
+            function renderFiles(layout) {
+                currentLayout = layout;
+                let html = '';
+
+                if (layout === 'list') {
+                    html += `<div class="file-grid-header"><div>Date modified</div><div>Owner</div><div>Name</div><div></div></div>`;
+                    sortedFiles.forEach(file => {
+                        const selectedClass = file.id === selectedFileId ? 'selected' : '';
+                        html += `
+                        <div class="file-row ${selectedClass}" data-id="${file.id}">
+                            <div class="file-date">${file.dateStr}</div>
+                            <div class="file-owner"><div class="avatar small">Ty</div> ${file.owner}</div>
+                            <div class="file-name"><span class="material-symbols-outlined ${file.iconClass}">${file.iconName}</span> ${file.name} ${getTagsHtml(file.tags)}</div>
+                            ${getOptionsHtml(file.id)}
+                        </div>`;
+                    });
+                } 
+                else if (layout === 'details') {
+                    html += `<div class="file-grid-header"><div>Name</div><div>Type</div><div>Date modified</div><div>Size</div><div></div></div>`;
+                    sortedFiles.forEach(file => {
+                        const selectedClass = file.id === selectedFileId ? 'selected' : '';
+                        html += `
+                        <div class="file-row ${selectedClass}" data-id="${file.id}">
+                            <div class="file-name"><span class="material-symbols-outlined ${file.iconClass}">${file.iconName}</span> ${file.name} ${getTagsHtml(file.tags)}</div>
+                            <div class="file-type">${file.type}</div>
+                            <div class="file-date">${file.dateStr}</div>
+                            <div class="file-size">${file.size}</div>
+                            ${getOptionsHtml(file.id)}
+                        </div>`;
+                    });
+                } 
+                else if (layout === 'tiles') {
+                    sortedFiles.forEach(file => {
+                        const selectedClass = file.id === selectedFileId ? 'selected' : '';
+                        html += `
+                        <div class="file-row ${selectedClass}" data-id="${file.id}">
+                            <div class="tile-left-content">
+                                <div class="file-name"><span class="material-symbols-outlined ${file.iconClass}">${file.iconName}</span></div>
+                                <div class="tile-text-container">
+                                    <div class="tile-title">${file.name} ${getTagsHtml(file.tags)}</div>
+                                    <div class="tile-type">${file.type}</div>
+                                    <div class="tile-size">${file.size}</div>
+                                </div>
+                            </div>
+                            ${getOptionsHtml(file.id)}
+                        </div>`;
+                    });
+                }
+                else if (layout === 'content') {
+                    sortedFiles.forEach(file => {
+                        const selectedClass = file.id === selectedFileId ? 'selected' : '';
+                        html += `
+                        <div class="file-row ${selectedClass}" data-id="${file.id}">
+                            <div class="file-name"><span class="material-symbols-outlined ${file.iconClass}">${file.iconName}</span></div>
+                            <div class="content-text-container">
+                                <div class="content-top-row">
+                                    <span class="content-title">${file.name} ${getTagsHtml(file.tags)}</span><span>${file.type}</span><span>• ${file.dateStr}</span>
+                                </div>
+                                <div class="content-bottom-row">
+                                    <span class="file-owner"><div class="avatar small">Ty</div> ${file.owner}</span><span>• ${file.size}</span>
+                                </div>
+                            </div>
+                            ${getOptionsHtml(file.id)}
+                        </div>`;
+                    });
+                }
+
+                fileListContainer.innerHTML = html;
+                fileListContainer.className = fileListContainer.className.replace(/layout-\w+/g, '').trim(); 
+                fileListContainer.classList.add(`layout-${layout}`);
+            }
+
+            // --- Layout Toggle Logic ---
+            layoutOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    layoutOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    renderFiles(option.getAttribute('data-layout'));
+                    closeMenu();
+                });
+            });
+
+            // --- File Selection & 3-Dot Menu Interactions ---
+            fileListContainer.addEventListener('click', (e) => {
+                
+                // Handle 3-Dot More Options Click
+                if (e.target.classList.contains('file-options-btn')) {
+                    e.stopPropagation(); // Don't trigger file row selection
+                    
+                    // Close all other open menus
+                    document.querySelectorAll('.file-options-menu').forEach(menu => menu.classList.remove('show'));
+                    
+                    // Open the clicked one
+                    const fileId = e.target.getAttribute('data-id');
+                    document.getElementById(`menu-${fileId}`).classList.toggle('show');
+                    return;
+                }
+
+                // Handle Tag Action Click
+                if (e.target.closest('.tag-action')) {
+                    e.stopPropagation(); // Don't trigger file row selection
+                    const fileId = e.target.closest('.tag-action').getAttribute('data-id');
+                    
+                    // Prompt user for a tag name
+                    const tagName = prompt("Enter tag name:");
+                    if (tagName && tagName.trim() !== '') {
+                        const file = sortedFiles.find(f => f.id === fileId);
+                        if (file) {
+                            file.tags.push(tagName.trim());
+                            renderFiles(currentLayout); // Re-render to show new tag
+                        }
+                    }
+                    return;
+                }
+
+                // Normal File Selection
+                const row = e.target.closest('.file-row');
+                if (!row) return;
+
+                fileListContainer.querySelectorAll('.file-row').forEach(r => r.classList.remove('selected'));
+                row.classList.add('selected');
+                selectedFileId = row.getAttribute('data-id');
+
+                if (activePanel) renderSidePanel();
+            });
+
+            // --- Panel Toggle Logic ---
+            panelOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const panelType = option.getAttribute('data-panel');
+                    if (activePanel === panelType) {
+                        option.classList.remove('active');
+                        activePanel = null;
+                        detailsPanel.classList.remove('show');
+                    } else {
+                        panelOptions.forEach(opt => opt.classList.remove('active'));
+                        option.classList.add('active');
+                        activePanel = panelType;
+                        detailsPanel.classList.add('show');
+                        renderSidePanel();
+                    }
+                    closeMenu();
+                });
+            });
+
+            // --- Render Side Panel ---
+            function renderSidePanel() {
+                if (!activePanel) return;
+                if (!selectedFileId) {
+                    detailsPanel.innerHTML = `<div class="dp-empty">Select a file to view its ${activePanel === 'info' ? 'details' : 'preview'}.</div>`;
+                    return;
+                }
+
+                const file = sortedFiles.find(f => f.id === selectedFileId);
+                if (!file) return;
+
+                let html = '';
+
+                if (activePanel === 'info') {
+                    html = `
+                        <div class="dp-icon-large"><span class="material-symbols-outlined ${file.iconClass}">${file.iconName}</span></div>
+                        <div class="dp-title">${file.name}</div>
+                        <div class="dp-section-title">Details:</div>
+                        <div class="dp-detail-row"><span class="dp-detail-label">Type</span><span class="dp-detail-value">${file.type}</span></div>
+                        <div class="dp-detail-row"><span class="dp-detail-label">Size</span><span class="dp-detail-value">${file.size}</span></div>
+                        <div class="dp-detail-row"><span class="dp-detail-label">Date modified</span><span class="dp-detail-value">${file.dateStr}</span></div>
+                        <div class="dp-detail-row"><span class="dp-detail-label">Location</span><span class="dp-detail-value">My Drive</span></div>
+                        <button class="btn-properties"><span class="material-symbols-outlined">settings</span>Properties</button>
+                    `;
+                } else if (activePanel === 'preview') {
+                    let previewHtml = '';
+                    if (file.type.includes("Video")) {
+                        previewHtml = `<div class="dp-preview-box" style="background: #000; color: #fff;"><span class="material-symbols-outlined" style="font-size: 48px;">play_circle</span></div>`;
+                    } else if (file.type.includes("Docs")) {
+                        previewHtml = `<div class="dp-preview-box" style="background: #fff; border: 1px solid var(--border-color); align-items: flex-start;"><p style="font-size: 11px; text-align: left; line-height: 1.6; color: var(--text-main);">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco...</p></div>`;
+                    } else if (file.type.includes("Sheets")) {
+                        previewHtml = `<div class="dp-preview-box" style="background: #fff; border: 1px solid var(--border-color); padding: 8px;"><table style="width: 100%; border-collapse: collapse; font-size: 10px; color: var(--text-main);"><tr style="background: var(--search-bg);"><th style="border: 1px solid var(--border-color); padding: 4px;">A</th><th style="border: 1px solid var(--border-color); padding: 4px;">B</th></tr><tr><td style="border: 1px solid var(--border-color); padding: 4px;">ID</td><td style="border: 1px solid var(--border-color); padding: 4px;">Value</td></tr><tr><td style="border: 1px solid var(--border-color); padding: 4px;">1</td><td style="border: 1px solid var(--border-color); padding: 4px;">Data X</td></tr></table></div>`;
+                    }
+                    html = `${previewHtml}<div class="dp-title" style="font-size: 14px; text-align: center; margin-top: 8px;">${file.name}</div>`;
+                }
+                detailsPanel.innerHTML = html;
+            }
+
+            function closeMenu() {
+                viewDropdown.classList.remove('show');
+                viewButton.classList.remove('active-btn');
+            }
+
+            // Initial Render
+            renderFiles('list');
+        });
+    </script>
+</body>
+</html>
